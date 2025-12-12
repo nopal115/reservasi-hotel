@@ -2,6 +2,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\RoomController;
+use App\Http\Controllers\ReservationController;
 
-Route::get('/kamar', [RoomController::class, 'index']);
+Route::get('/reservasi/{room_id}', [ReservationController::class, 'create']);
+Route::post('/reservasi', [ReservationController::class, 'store']);
