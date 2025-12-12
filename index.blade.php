@@ -1,35 +1,178 @@
+@extends('layouts.admin')
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Filter Kamar</title>
-</head>
-<body>
-    <h2>Filter & Pencarian Kamar</h2>
+@section('content')
 
-    <form method="GET" action="">
-        <label>Tipe Kamar:</label>
-        <select name="tipe">
-            <option value="">-- Semua --</option>
-            <option value="Standard">Standard</option>
-            <option value="Deluxe">Deluxe</option>
-            <option value="Suite">Suite</option>
+<div class="p-10">
+
+    <h1 class="text-3xl font-bold text-blue-800 mb-6">🏨 Kelola Kamar</h1>
+
+    {{-- BUTTON TAMBAH KAMAR --}}
+    <a href="{{ route('admin.kamar.create') }}"
+        class="px-5 py-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition">
+        ➕ Tambah Kamar
+    </a>
+
+    {{-- SUCCESS MESSAGE --}}
+    @if(session('success'))
+        <div class="mt-4 p-3 bg-green-200 text-green-700 rounded-xl">
+            {{ session('success') }}
+        </div>
+    @endif
+
+
+    {{-- ================================
+        FILTER KAMAR (STATUS & TIPE)
+    ================================= --}}
+    <form method="GET" class="mt-6 mb-4 flex gap-4 items-center">
+
+        {{-- FILTER STATUS --}}
+        <select name="status" class="p-3 border rounded-xl">
+            <option value="">Semua Status</option>
+            <option value="available"   {{ request('status')=='available' ? 'selected' : '' }}>Available</option>
+            <option value="booked"      {{ request('status')=='booked' ? 'selected' : '' }}>Booked</option>
+            <option value="maintenance" {{ request('status')=='maintenance' ? 'selected' : '' }}>Maintenance</option>
+            <option value="unavailable" {{ request('status')=='unavailable' ? 'selected' : '' }}>Unavailable</option>
         </select>
 
-        <label>Harga Minimum:</label>
-        <input type="number" name="min_harga">
+        {{-- FILTER TIPE KAMAR --}}
+        <input type="text" name="tipe_kamar" value="{{ request('tipe_kamar') }}"
+               placeholder="Cari tipe kamar..."
+               class="p-3 border rounded-xl w-64">
 
-        <label>Harga Maksimum:</label>
-        <input type="number" name="max_harga">
-
-        <button type="submit">Cari</button>
+        <button class="px-5 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition">
+            Filter
+        </button>
     </form>
 
-    <h3>Hasil:</h3>
-    <ul>
-        @foreach($rooms as $room)
-            <li>{{ $room->type }} - Rp {{ $room->price }}</li>
-        @endforeach
-    </ul>
-</body>
-</html>
+
+
+    {{-- ==================================
+        TABEL DAFTAR KAMAR
+    =================================== --}}
+    <div class="mt-6 glass p-6 rounded-2xl shadow-xl">
+
+        <table class="w-full border-collapse">
+            <thead>
+                <tr class="font-semibold text-gray-700 border-b bg-white/40">
+                    <th class="py-3 text-left">Foto</th>
+                    <th class="py-3 text-left">Tipe Kamar</th>
+                    <th class="py-3 text-left">Deskripsi</th>
+                    <th class="py-3 text-left">Fasilitas</th>
+                    <th class="py-3 text-left">Harga</th>
+                    <th class="py-3 text-left">Status</th>
+                    <th class="py-3 text-center">Aksi</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @foreach($kamar as $km)
+                <tr class="border-b hover:bg-blue-50 transition">
+
+                    {{-- FOTO KAMAR --}}
+                    <td class="py-3">
+                        @php
+                            $img = $km->foto_utama
+                                ? 'uploads/kamar/' . $km->foto_utama
+                                : null;
+                        @endphp
+
+                        @if($img && file_exists(public_path($img)))
+                            <img src="{{ asset($img) }}"
+                                 class="w-20 h-16 object-cover rounded-lg shadow">
+                        @else
+                            <div class="w-20 h-16 rounded-lg bg-gray-300 flex items-center justify-center text-gray-600">
+                                No Photo
+                            </div>
+                        @endif
+                    </td>
+
+                    {{-- TIPE KAMAR --}}
+                    <td class="py-3 font-semibold text-gray-800">
+                        {{ $km->tipe_kamar }}
+                    </td>
+
+                    {{-- DESKRIPSI KAMAR --}}
+                    <td class="py-3 text-gray-700 max-w-xs truncate">
+                        {{ $km->deskripsi ?? '-' }}
+                    </td>
+
+                    {{-- FASILITAS (ARRAY) --}}
+                    <td class="py-3 text-gray-700 text-sm">
+                        @if($km->fasilitas)
+                            @foreach(json_decode($km->fasilitas, true) as $f)
+                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs mr-1">
+                                    {{ $f }}
+                                </span>
+                            @endforeach
+                        @else
+                            <span class="text-gray-400">Tidak ada</span>
+                        @endif
+                    </td>
+
+                    {{-- HARGA --}}
+                    <td class="py-3 text-gray-700">
+                        Rp {{ number_format($km->harga, 0, ',', '.') }}
+                    </td>
+
+                    {{-- STATUS --}}
+                    <td class="py-3">
+                        @php
+                            $badgeColor = match($km->status) {
+                                'available'   => 'bg-green-500',
+                                'booked'      => 'bg-yellow-500',
+                                'maintenance' => 'bg-red-500',
+                                'unavailable' => 'bg-gray-500',
+                                default       => 'bg-gray-400',
+                            };
+                        @endphp
+
+                        <span class="px-3 py-1 text-white text-sm rounded-full {{ $badgeColor }}">
+                            {{ ucfirst($km->status) }}
+                        </span>
+                    </td>
+
+                    {{-- AKSI --}}
+                    <td class="py-3">
+                        <div class="flex gap-3 justify-center">
+
+                            {{-- DETAIL --}}
+                            <a href="{{ route('admin.kamar.show', $km->id_kamar) }}"
+                                class="px-4 py-2 bg-blue-500 text-white rounded-xl shadow hover:bg-blue-600 transition">
+                                👁 Detail
+                            </a>
+
+                            {{-- EDIT --}}
+                            <a href="{{ route('admin.kamar.edit', $km->id_kamar) }}"
+                                class="px-4 py-2 bg-yellow-500 text-white rounded-xl shadow hover:bg-yellow-600 transition">
+                                ✏ Edit
+                            </a>
+
+                            {{-- DELETE --}}
+                            <form action="{{ route('admin.kamar.delete', $km->id_kamar) }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button class="px-4 py-2 bg-red-600 text-white rounded-xl shadow hover:bg-red-700 transition"
+                                        onclick="return confirm('Yakin ingin menghapus kamar ini?')">
+                                    🗑 Hapus
+                                </button>
+                            </form>
+
+                        </div>
+                    </td>
+
+                </tr>
+                @endforeach
+            </tbody>
+
+        </table>
+
+        {{-- PAGINATION --}}
+        <div class="mt-4">
+            {{ $kamar->links() }}
+        </div>
+
+    </div>
+
+</div>
+
+@endsection
