@@ -9,19 +9,19 @@ use Illuminate\Support\Facades\Auth;
 class NotifikasiController extends Controller
 {
     /**
-     * 🟢 Menampilkan semua notifikasi untuk user login
+     * Menampilkan semua notifikasi untuk user login
      */
     public function index()
     {
         $notifikasi = Notifikasi::where('id_user', Auth::id())
             ->orderBy('created_at', 'DESC')
-            ->get();
+            ->paginate(15);
 
         return view('tamu.notifikasi.index', compact('notifikasi'));
     }
 
     /**
-     * 🟢 Tandai notifikasi sebagai telah dibaca
+     * Tandai notifikasi sebagai telah dibaca
      */
     public function markRead($id)
     {
@@ -37,7 +37,19 @@ class NotifikasiController extends Controller
     }
 
     /**
-     * 🟢 Fungsi helper untuk membuat notifikasi baru
+     * Tandai semua notifikasi sebagai telah dibaca
+     */
+    public function markAllRead()
+    {
+        Notifikasi::where('id_user', Auth::id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return redirect()->back()->with('success', 'Semua notifikasi telah ditandai sebagai dibaca.');
+    }
+
+    /**
+     * Fungsi helper untuk membuat notifikasi baru
      */
     public static function send($id_user, $judul, $pesan)
     {
